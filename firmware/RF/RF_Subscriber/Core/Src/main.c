@@ -101,7 +101,7 @@ int main(void)
 
   TI_strobe(CCxxx0_SIDLE);
   TI_strobe(CCxxx0_SFRX);
-TI_strobe(CCxxx0_SRX);
+  TI_strobe(CCxxx0_SRX);
   /* USER CODE END 2 */
 
   /* Infinite loop */
