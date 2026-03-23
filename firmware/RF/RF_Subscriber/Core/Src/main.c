@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cc1101.h"
+#include "stm32f1xx_hal_gpio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,7 +102,7 @@ int main(void)
 
   TI_strobe(CCxxx0_SIDLE);
   TI_strobe(CCxxx0_SFRX);
-TI_strobe(CCxxx0_SRX);
+  TI_strobe(CCxxx0_SRX);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -112,6 +113,21 @@ TI_strobe(CCxxx0_SRX);
 
     /* USER CODE BEGIN 3 */
     
+     // Reset length for each new packet
+    uint8_t rxBuffer[64];
+    uint8_t rxLength =64;
+    
+
+    // Check if a packet is received
+    if (TI_receive_packet(rxBuffer, &rxLength))
+    {
+      HAL_GPIO_TogglePin(LED_Pin_GPIO_Port, LED_Pin_Pin)
+      TI_strobe(CCxxx0_SRX);
+
+     
+    }
+
+    HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
