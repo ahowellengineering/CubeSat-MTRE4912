@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cc1101.h"
+#include "stm32f1xx_hal_gpio.h"
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +47,10 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-
+volatile uint8_t receivedCounter = 0;
+volatile uint8_t rssiValue = 0;
+uint8_t version = 0;
+uint8_t partnum = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,16 +99,36 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  TI_init(&hspi1, Chip_Select_GPIO_Port, Chip_Select_Pin);
+  Power_up_reset();
 
+  
+  // Reset length for each new packet
+  uint8_t rxBuffer[64];
+  uint8_t rxLength = 64;
+  version = TI_read_status(CCxxx0_VERSION);
+  partnum = TI_read_status(CCxxx0_PARTNUM);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  TI_strobe(CCxxx0_SRX);
+  
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    rxLength = 64;
+    // Check if a packet is received
+    if (TI_receive_packet(rxBuffer, &rxLength))
+    {
+      receivedCounter = rxBuffer[0]; // Assuming the first byte is the counter
+      rssiValue = (int8_t)TI_read_status(CCxxx0_RSSI); // RSSI is the second last byte
+      HAL_GPIO_TogglePin(led_GPIO_Port, led_Pin);
+      TI_strobe(CCxxx0_SRX);
+    }
+
   }
   /* USER CODE END 3 */
 }
@@ -170,7 +195,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

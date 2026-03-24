@@ -101,8 +101,8 @@ int main(void)
 
   uint8_t count = 0;
   
+  uint8_t count = 0;
   /* USER CODE END 2 */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
