@@ -230,8 +230,10 @@ void TI_write_settings()
 
 	// RX Filter BW = 58 kHz
 	TI_write_reg(CCxxx0_MDMCFG4,0xF5); //Modem Configuration
+
 	// Data Rate = 1.2 kBaud
 	TI_write_reg(CCxxx0_MDMCFG3,0x83); //Modem Configuration
+	
 	// GFSK modulation
 	TI_write_reg(CCxxx0_MDMCFG2,0x13); //Modem Configuration
 	TI_write_reg(CCxxx0_MDMCFG1,0x22); //Modem Configuration

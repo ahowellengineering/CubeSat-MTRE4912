@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "cc1101.h"
 #include "stm32f1xx_hal_gpio.h"
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,11 +99,11 @@ int main(void)
   TI_init(&hspi1, Chip_Select_GPIO_Port, Chip_Select_Pin);
   Power_up_reset();
 
-  TI_write_reg(CCxxx0_PKTCTRL0, 0x05);
-
-  TI_strobe(CCxxx0_SIDLE);
-  TI_strobe(CCxxx0_SFRX);
   TI_strobe(CCxxx0_SRX);
+
+   // Reset length for each new packet
+    uint8_t rxBuffer[64];
+    uint8_t rxLength = 64;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -112,20 +113,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    
-     // Reset length for each new packet
-    uint8_t rxBuffer[64];
-    uint8_t rxLength =64;
-    
-
+    rxLength = 64;
     // Check if a packet is received
     if (TI_receive_packet(rxBuffer, &rxLength))
     {
-      HAL_GPIO_TogglePin(LED_Pin_GPIO_Port, LED_Pin_Pin);
-      TI_strobe(CCxxx0_SRX);
+      HAL_GPIO_TogglePin(led_GPIO_Port, led_Pin);
     }
 
-    HAL_Delay(100);
+    TI_strobe(CCxxx0_SRX);
   }
   /* USER CODE END 3 */
 }
@@ -247,13 +242,35 @@ static void MX_USART1_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(led_GPIO_Port, led_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(Chip_Select_GPIO_Port, Chip_Select_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : led_Pin */
+  GPIO_InitStruct.Pin = led_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(led_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Chip_Select_Pin */
+  GPIO_InitStruct.Pin = Chip_Select_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(Chip_Select_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
