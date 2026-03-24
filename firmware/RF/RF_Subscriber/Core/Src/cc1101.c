@@ -230,17 +230,15 @@ void TI_write_settings()
 
 	// RX Filter BW = 58 kHz
 	TI_write_reg(CCxxx0_MDMCFG4,0x7A); //Modem Configuration
-
 	// Data Rate = 1.2 kBaud
 	TI_write_reg(CCxxx0_MDMCFG3,0x83); //Modem Configuration
-	
 	// GFSK modulation
 	TI_write_reg(CCxxx0_MDMCFG2,0x13); //Modem Configuration
 	TI_write_reg(CCxxx0_MDMCFG1,0x22); //Modem Configuration
 	TI_write_reg(CCxxx0_MDMCFG0,0xF8); //Modem Configuration
 
 	// Frequency Deviation of 5.157 kHz
-	TI_write_reg(CCxxx0_DEVIATN,0x15); //Modem Deviation Setting
+	TI_write_reg(CCxxx0_DEVIATN,0x34); //Modem Deviation Setting
 
 	TI_write_reg(CCxxx0_MCSM2,0x07);   //Main Radio Control State Machine Configuration
 	TI_write_reg(CCxxx0_MCSM1,0x30);   //Main Radio Control State Machine Configuration
