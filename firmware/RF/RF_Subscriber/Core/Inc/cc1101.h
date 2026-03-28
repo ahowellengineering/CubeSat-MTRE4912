@@ -70,6 +70,6 @@ void CC1101_WriteReg(CC1101_t *dev, uint8_t addr, uint8_t val);
 uint8_t CC1101_ReadReg(CC1101_t *dev, uint8_t addr);
 void CC1101_Strobe(CC1101_t *dev, uint8_t strobe);
 void CC1101_SetMaxPower(CC1101_t *dev);
-int16_t CC1101_GetRSSI(CC1101_t *dev);
+int16_t CC1101_GetRSSI(uint8_t buf[], uint8_t buf_len);
 
 #endif

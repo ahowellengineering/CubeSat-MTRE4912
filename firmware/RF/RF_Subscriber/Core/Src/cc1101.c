@@ -37,6 +37,7 @@ uint8_t CC1101_Init(CC1101_t *dev) {
 
     // 915MHz Optimized Config (38.4kBaud, GFSK)
     CC1101_WriteReg(dev, 0x02, 0x06); // IOCFG0: Assert on Sync, de-assert on end
+    CC1101_WriteReg(dev, 0x07, 0x04); // PKTCTRL1: Append status
     CC1101_WriteReg(dev, 0x08, 0x05); // PKTCTRL0: Variable length, CRC enabled
     CC1101_WriteReg(dev, 0x06, 0x40); // PKTLEN: 64 bytes max
     CC1101_WriteReg(dev, 0x0D, 0x21); // FREQ2
@@ -101,19 +102,22 @@ void CC1101_SetMaxPower(CC1101_t *dev) {
     CC1101_WriteReg(dev, 0x3E, 0xC0);
 }
 
-int16_t CC1101_GetRSSI(CC1101_t *dev) {
-    // Read the raw register. 0x34 is RSSI status.
-    // 0xC0 mask is (Read | Burst/Status)
-    uint8_t raw = CC1101_ReadReg(dev, 0x34 | 0xC0);
-    
-    int16_t rssi_dbm;
+int16_t CC1101_GetRSSI(uint8_t buf[], uint8_t buf_len) {
+    // 1. The RSSI status byte is the first byte after the payload
+    uint8_t raw_rssi = buf[buf_len];
 
-    // Convert 2's complement to decimal
-    if (raw >= 128) {
-        rssi_dbm = ((int16_t)(raw - 256) / 2) - 74;
+    int16_t rssi_dec;
+
+    // 2. Convert from 2's complement to decimal signed integer
+    if (raw_rssi >= 128) {
+        rssi_dec = (int16_t)((int16_t)raw_rssi - 256);
     } else {
-        rssi_dbm = (raw / 2) - 74;
+        rssi_dec = (int16_t)raw_rssi;
     }
+
+    // 3. Apply the CC1101 formula: P = (RSSI/2) - RSSI_offset
+    // Typical offset is 74 for most 433/868/915MHz configurations.
+    int16_t rssi_dbm = (rssi_dec / 2) - 74;
 
     return rssi_dbm;
 }

@@ -115,15 +115,20 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    uint8_t marc_state = CC1101_ReadReg(&cc1101, CC1101_MARCSTATE) & 0x1F;
+    if (marc_state == 0x11) { // RXFIFO_OVERFLOW
+        CC1101_Strobe(&cc1101, CC1101_SFRX);  // flush RX FIFO
+        CC1101_Strobe(&cc1101, CC1101_SRX);   // re-enter RX
+        continue;
+    }
 
     rx_len = CC1101_ReceivePacket(&cc1101, rx_buffer);
     if (rx_len > 0) {
         received_count = rx_buffer[0]; // Assuming the first byte is the counter
-        rssi_value = CC1101_GetRSSI(&cc1101); // Read RSSI of received packet
+        rssi_value = CC1101_GetRSSI(rx_buffer, rx_len); // Read RSSI of received packet
         HAL_GPIO_TogglePin(led_GPIO_Port, led_Pin); // Toggle LED on packet reception
-        HAL_Delay(100); // Short delay to debounce LED toggle
+        CC1101_Strobe(&cc1101, CC1101_SRX); 
     }
-    HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
