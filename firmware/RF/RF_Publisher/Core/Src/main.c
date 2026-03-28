@@ -111,6 +111,7 @@ CC1101_SetMaxPower(&cc1101); // Set max power for testing
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
     CC1101_SendPacket(&cc1101, &tx_counter, sizeof(tx_counter));
     HAL_GPIO_TogglePin(ledPin_GPIO_Port, ledPin_Pin);
     tx_counter++;
