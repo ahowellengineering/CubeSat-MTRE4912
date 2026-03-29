@@ -63,6 +63,9 @@ void Error_Handler(void);
 #define GDO_CC1101_GPIO_Port GPIOA
 #define CS_CC1101_Pin GPIO_PIN_4
 #define CS_CC1101_GPIO_Port GPIOA
+#define button_Pin GPIO_PIN_15
+#define button_GPIO_Port GPIOB
+#define button_EXTI_IRQn EXTI15_10_IRQn
 
 /* USER CODE BEGIN Private defines */
 

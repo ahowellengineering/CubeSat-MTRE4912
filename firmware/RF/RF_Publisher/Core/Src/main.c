@@ -50,6 +50,7 @@ uint8_t CC1101_Version;
 uint8_t CC1101_PartNum;
 uint8_t tx_counter = 0;
 uint8_t marcstate = 0;
+volatile uint8_t button_pressed = 0; 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,7 +63,14 @@ static void MX_SPI1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+// must put here so spi is in scope for the cc1101 struct initializer
+CC1101_t cc1101 = {
+    .hspi = &hspi1,
+    .csPort = CS_CC1101_GPIO_Port,
+    .csPin = CS_CC1101_Pin,
+    .gdo0Port = GDO_CC1101_GPIO_Port,
+    .gdo0Pin = GDO_CC1101_Pin
+};
 /* USER CODE END 0 */
 
 /**
@@ -95,13 +103,6 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-CC1101_t cc1101 = {
-    .hspi = &hspi1,
-    .csPort = CS_CC1101_GPIO_Port,
-    .csPin = CS_CC1101_Pin,
-    .gdo0Port = GDO_CC1101_GPIO_Port,
-    .gdo0Pin = GDO_CC1101_Pin
-};
 if (!CC1101_Init(&cc1101)) {
     // Initialization failed, handle error (e.g., blink LED rapidly)
     while (1) {
@@ -111,18 +112,29 @@ if (!CC1101_Init(&cc1101)) {
 }
 CC1101_Version = CC1101_ReadReg(&cc1101, CC1101_VERSION);
 CC1101_PartNum = CC1101_ReadReg(&cc1101, CC1101_PARTNUM);
-CC1101_SetMaxPower(&cc1101); // Set max power for testing
+CC1101_SetMaxPower(&cc1101); // Set max power for testing (limited for 433MHz)
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint32_t last_heartbeat = 0;
   while (1)
   {
-    // marcstate = CC1101_ReadStatus(&cc1101, CC1101_MARCSTATE) & 0x1F;
-    CC1101_SendPacket(&cc1101, &tx_counter, sizeof(tx_counter));
-    HAL_GPIO_TogglePin(ledPin_GPIO_Port, ledPin_Pin);
-    tx_counter++;
-    HAL_Delay(1000); // Toggle every second
+    if (HAL_GetTick() - last_heartbeat > 1000) {
+        HAL_GPIO_TogglePin(ledPin_GPIO_Port, ledPin_Pin);
+        last_heartbeat = HAL_GetTick();
+    }
+    if (button_pressed) {
+        // Handle button press event
+        //debounce
+        HAL_Delay(50); // debounce
+        if (HAL_GPIO_ReadPin(button_GPIO_Port, button_Pin) == GPIO_PIN_RESET) {
+          CC1101_SendPacket(&cc1101, &tx_counter, sizeof(tx_counter));
+          tx_counter++;
+        } 
+        button_pressed = 0; // Reset flag
+    }
+
   }
     /* USER CODE END WHILE */
 
@@ -229,6 +241,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(ledPin_GPIO_Port, ledPin_Pin, GPIO_PIN_RESET);
@@ -256,13 +269,28 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CS_CC1101_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : button_Pin */
+  GPIO_InitStruct.Pin = button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(button_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == button_Pin) {
+    button_pressed = 1; // Set flag to indicate button was pressed
+  }
+}
 /* USER CODE END 4 */
 
 /**
